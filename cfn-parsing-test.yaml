@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Example CloudFormation Template"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: "default"
+  DatabaseName:
+    Type: String
+    Default: "example-database"
+  ApiKey:
+    Type: String
+    Default: "example-api-key"
+  LogLevel:
+    Type: String
+    Default: "INFO"
+
+Globals:
+  Function:
+    Timeout: 60
+    EventInvokeConfig:
+      MaximumRetryAttempts: 0
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        LOG_LEVEL: !Ref LogLevel
+        POWERTOOLS_SERVICE_NAME: !Join [ '-', [ !Ref AWS::StackName, 'xray' ] ]
+        REGION_NAME: !Ref AWS::Region
+        ENVIRONMENT: !Ref Environment
+        POWERTOOLS_LOGGER_SAMPLE_RATE: !FindInMap [ "Environments", !Ref Environment, "PowerToolsLoggerSampleRate" ]
+
+Mappings:
+  Environments:
+    default:
+      PowerToolsLoggerSampleRate: 1
+    prod:
+      PowerToolsLoggerSampleRate: 0.01
+
+Resources:
+  ExampleResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: "MyLambda"
+      Handler: "index.handler"
+      CodeUri: .
+      Role: "arn:aws:iam::123456789012:role/execution_role"
+      Environment:
+        Variables:
+          DATABASE_NAME: !Ref DatabaseName
+          LOG_LEVEL: ERROR
+
+Outputs:
+  ExampleOutput:
+    Description: "Example output"
+    Value: "ExampleValue"
